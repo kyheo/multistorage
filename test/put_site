@@ -1,0 +1,2 @@
+curl -i -d "$2" -X PUT http://127.0.0.1:8888/itemstore/sites/$1
+echo ''

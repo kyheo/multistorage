@@ -14,6 +14,10 @@ class ResManager(object):
     def end(cls):
         ResManager._INS.con.end_request()
 
+    @classmethod
+    def oid(cls, id):
+        return pymongo.objectid.ObjectId(id)
+
     def __init__(self, site, col):
         self.con = pymongo.Connection()
         self.db  = self.con[site]

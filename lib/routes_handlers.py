@@ -1,5 +1,8 @@
 import json
 import urllib
+import logging
+
+import pymongo
 
 import tornado.web
 
@@ -32,10 +35,11 @@ class CollectionHandler(BaseHandler):
         id = ResManager.get(site, col).save(data)
         ResManager.end()
         self.render(str(id))
+        ResManager.end()
 
     def delete(self, site, col):
-        self.head(site, col)
         ResManager.get(site, col).drop()
+        ResManager.end()
 
     def _parse_params(self):
         params = {}
@@ -56,4 +60,52 @@ class CollectionHandler(BaseHandler):
             params['limit'] = int(limit)
         return params
 
+class ItemHandler(BaseHandler):
 
+    def head(self, site, col, id):
+        try:
+            i = ResManager.get(site, col).find_one(ResManager.oid(id), fields={})
+            ResManager.end()
+            if i is None:
+                raise tornado.web.HTTPError(404)
+        except pymongo.errors.InvalidId as e:
+            raise tornado.web.HTTPError(400, str(e))
+
+    def get(self, site, col, id):
+        try:
+            i = ResManager.get(site, col).find_one(ResManager.oid(id))
+            ResManager.end()
+            if i is None:
+                raise tornado.web.HTTPError(404)
+            i['_id'] = str(i['_id'])
+            self.render(item)
+        except pymongo.errors.InvalidId as e:
+            raise tornado.web.HTTPError(400, str(e))
+
+    def put(self, site, col, id):
+        try:
+            i = ResManager.get(site, col).find_one(ResManager.oid(id))
+            if i is None:
+                ResManager.end()
+                raise tornado.web.HTTPError(404)
+
+            data = json.loads(self.request.body)
+            if '_id' in data:
+                del(data['_id'])
+            data['_id'] = ResManager.oid(id)
+            id = ResManager.get(site, col).save(data)
+            
+            ResManager.end()
+        except pymongo.errors.InvalidId as e:
+            raise tornado.web.HTTPError(400, str(e))
+
+    def delete(self, site, col, id):
+        try:
+            i = ResManager.get(site, col).find_one(ResManager.oid(id))
+            if i is None:
+                ResManager.end()
+                raise tornado.web.HTTPError(404)
+            ResManager.get(site, col).remove(ResManager.oid(id))
+            ResManager.end()
+        except pymongo.errors.InvalidId as e:
+            raise tornado.web.HTTPError(400, str(e))

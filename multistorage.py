@@ -24,7 +24,6 @@ def main():
     http_server.listen(options.port)
     tornado.ioloop.IOLoop.instance().start()
 
-
 if __name__ == "__main__":
     define("port", default=8888, help="run on the given port", type=int)
     main()
