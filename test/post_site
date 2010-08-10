@@ -1,0 +1,2 @@
+curl -i -d "$1" -X POST 'http://127.0.0.1:8888/itemstore/sites/'
+echo ''
