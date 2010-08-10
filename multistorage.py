@@ -7,9 +7,15 @@ from tornado.options import define, options
 
 import logging
 
-from route_handlers import routes
+from lib.routes_handlers import *
 
-DEBUG = True
+
+routes = \
+   [
+    (r"/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)/"             , CollectionHandler),
+    (r"/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)", ItemHandler),
+   ]
+
 
 def main():
     tornado.options.parse_command_line()
