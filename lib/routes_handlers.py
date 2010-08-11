@@ -2,12 +2,10 @@ import json
 import urllib
 import logging
 
-import pymongo
-
 import tornado.web
 
 from lib.basehandler import BaseHandler 
-from lib.resmanager import ResManager
+from lib.resmanager import ResManager, InvalidId
 
 class CollectionHandler(BaseHandler):
 
@@ -68,7 +66,7 @@ class ItemHandler(BaseHandler):
             ResManager.end()
             if i is None:
                 raise tornado.web.HTTPError(404)
-        except pymongo.errors.InvalidId as e:
+        except InvalidId as e:
             raise tornado.web.HTTPError(400, str(e))
 
     def get(self, site, col, id):
@@ -78,8 +76,8 @@ class ItemHandler(BaseHandler):
             if i is None:
                 raise tornado.web.HTTPError(404)
             i['_id'] = str(i['_id'])
-            self.render(item)
-        except pymongo.errors.InvalidId as e:
+            self.render(i)
+        except InvalidId as e:
             raise tornado.web.HTTPError(400, str(e))
 
     def put(self, site, col, id):
@@ -96,7 +94,7 @@ class ItemHandler(BaseHandler):
             id = ResManager.get(site, col).save(data)
             
             ResManager.end()
-        except pymongo.errors.InvalidId as e:
+        except InvalidId as e:
             raise tornado.web.HTTPError(400, str(e))
 
     def delete(self, site, col, id):
@@ -107,5 +105,5 @@ class ItemHandler(BaseHandler):
                 raise tornado.web.HTTPError(404)
             ResManager.get(site, col).remove(ResManager.oid(id))
             ResManager.end()
-        except pymongo.errors.InvalidId as e:
+        except InvalidId as e:
             raise tornado.web.HTTPError(400, str(e))

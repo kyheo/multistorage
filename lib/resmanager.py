@@ -1,4 +1,5 @@
 import pymongo
+from pymongo.errors import InvalidId as InvalidId_Orig
 
 class ResManager(object):
 
@@ -16,9 +17,15 @@ class ResManager(object):
 
     @classmethod
     def oid(cls, id):
-        return pymongo.objectid.ObjectId(id)
+        try:
+            return pymongo.objectid.ObjectId(id)
+        except Exception as e:
+            raise InvalidId(str(e))
 
     def __init__(self, site, col):
         self.con = pymongo.Connection()
         self.db  = self.con[site]
         self.col = self.db[col]
+
+class InvalidId(InvalidId_Orig):
+    pass
