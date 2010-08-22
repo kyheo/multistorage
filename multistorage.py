@@ -12,7 +12,7 @@ from lib.routes_handlers import *
 
 routes = \
    [
-    (r"/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)/"             , CollectionHandler),
+    (r"/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)/", CollectionHandler),
     (r"/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)", ItemHandler),
    ]
 
