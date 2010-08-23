@@ -45,14 +45,4 @@ one of them, with the urls, will represent a different action in the system.
 * Cache
 * Auth
 
-Site
-====
-- Data Storage Design
-  - Categories
-  - Items
-  - Items Comments
-  - Images
-- Models
-- Tests
-- Controllers
-- Templates (Decoupled from controllers)
+Requires: tornado, httplib, json, pymongo
