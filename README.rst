@@ -3,6 +3,13 @@ MultiStorage
 Service that will act as a storage for different applications providing a fairly
 simple REST interface for managing the information and retrieving it.
 
+Install
++++++++
+Just run create_env.sh and you will end up with a nice virtual environment
+(courtesy of virtualenv) with all the requirements installed.
+
+Usage
++++++
 Each application willing to interact with the storage will use an application id
 provided, and for each kind of data that it will store a collection name should
 be set in the url.
@@ -44,5 +51,3 @@ one of them, with the urls, will represent a different action in the system.
 * JSON as information markup
 * Cache
 * Auth
-
-Requires: tornado, httplib, json, pymongo
