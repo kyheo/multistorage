@@ -3,9 +3,11 @@ import json
 import hashlib
 import logging
 import threading
+import datetime
 
 from tornado import web
 
+import lib
 from lib import workers
 from lib.resmanager import ResManager, InvalidId
 
@@ -165,10 +167,13 @@ class StatsHandler(BaseHandler):
 
 
     def _get(self):
+        uptime = datetime.timedelta(seconds=time.time() - lib.START_TIME)
         doc = {}
+        doc['Uptime'] = str(uptime) 
         doc['Workers'] = workers.stats()
-        doc['CollectionHandler'] = CollectionHandler.HANDLED
-        doc['ItemHandler'] = ItemHandler.HANDLED
-        doc['StatsHandler'] = StatsHandler.HANDLED
+        doc['RequestHandlers'] = {'CollectionHandler': CollectionHandler.HANDLED,
+                                  'ItemHandler'      : ItemHandler.HANDLED      ,
+                                  'StatsHandler'     : StatsHandler.HANDLED     ,
+                                 }
         self.write(doc)
         self.finish()
