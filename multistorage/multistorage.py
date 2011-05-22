@@ -34,6 +34,8 @@ def main():
         http_server = tornado.httpserver.HTTPServer(application)
         http_server.listen(options.port)
         tornado.ioloop.IOLoop.instance().start()
+    except KeyboardInterrupt:
+        logging.info('Shutdown')
     finally:
         workers.stop()
 
