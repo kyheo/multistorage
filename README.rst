@@ -17,6 +17,11 @@ With these two rules in mind the *urls* will be like this:
 
 **/appID/collectionName/**
 
+There are a few reserved words:
+
+* stats : cannot be used as appID name.
+
+
 This urls will accomplish the following regex:
 
 **/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)/([0-9a-zA-Z]*)**

@@ -64,13 +64,16 @@ class BaseHandler(web.RequestHandler):
 class CollectionHandler(BaseHandler):
     """Handler for collection actions"""
 
+    HANDLED = 0
+
     def head(self, site, col):
         """ MongoDB will create the database and the collection"""
-        pass
+        CollectionHandler.HANDLED += 1
 
 
     @web.asynchronous
     def get(self, site, col):
+        CollectionHandler.HANDLED += 1
         if self.get_status() == 304:
             return
         workers.add(lambda: self._get(site, col))
@@ -114,8 +117,11 @@ class CollectionHandler(BaseHandler):
 class ItemHandler(BaseHandler):
     """Handler for items (aka: rows, entries) actions"""
  
+    HANDLED = 0
+
     @web.asynchronous
     def head(self, site, col, oid):
+        ItemHandler.HANDLED += 1
         if self.get_status() == 304:
             return
         workers.add(lambda: self._get(site, col,oid, {'fields': {}}))
@@ -123,6 +129,7 @@ class ItemHandler(BaseHandler):
 
     @web.asynchronous
     def get(self, site, col, oid):
+        ItemHandler.HANDLED += 1
         if self.get_status() == 304:
             return
         workers.add(lambda: self._get(site, col, oid))
@@ -140,3 +147,28 @@ class ItemHandler(BaseHandler):
             self.finish()
         except InvalidId as e:
             raise web.HTTPError(400, str(e))
+
+
+
+
+class StatsHandler(BaseHandler):
+    """Handler for stats actions."""
+ 
+    HANDLED = 0
+
+    @web.asynchronous
+    def get(self):
+        StatsHandler.HANDLED += 1
+        if self.get_status() == 304:
+            return
+        workers.add(lambda: self._get())
+
+
+    def _get(self):
+        doc = {}
+        doc['Workers'] = workers.stats()
+        doc['CollectionHandler'] = CollectionHandler.HANDLED
+        doc['ItemHandler'] = ItemHandler.HANDLED
+        doc['StatsHandler'] = StatsHandler.HANDLED
+        self.write(doc)
+        self.finish()

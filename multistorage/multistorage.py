@@ -10,8 +10,10 @@ import logging
 from lib import handlers, workers
 
 
-routes = [(r"/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)/", handlers.CollectionHandler),
-          (r"/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)", handlers.ItemHandler)]
+routes = [(r"/stats/", handlers.StatsHandler),
+          (r"/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)/", handlers.CollectionHandler),
+          (r"/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)/([0-9a-zA-Z]+)", handlers.ItemHandler),
+         ]
 
 
 define('port'   , type=int , default=8000 , help='run on the given port')

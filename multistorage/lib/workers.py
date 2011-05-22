@@ -8,26 +8,24 @@ _WORKERS = []
 class Worker(threading.Thread):
 
     def __init__(self, *args, **kwargs):
-        self._running = False
+        self.stop = True
+        self.handled = 0
         super(Worker, self).__init__(*args, **kwargs)
-
-
-    def stop(self):
-        self._running = False
 
 
     def run(self):
         logging.debug('%s running' % (self.name,))
-        self._running = True
-        while self._running:
+        self.stop = False
+        while not self.stop:
             try:
                 fn = _QUEUE.get(timeout=0.2)
                 logging.debug('%s callback found' % (self.name,))
                 fn()
+                self.handled += 1
             except Queue.Empty:
-                if not self._running:
-                    break
-        logging.debug('%s going down' % (self.name,))
+                pass
+        logging.debug('%s going down. Handled %d jobs.' % (self.name,
+                                                           self.handled))
 
 
 
@@ -47,5 +45,14 @@ def start(qty=1):
 def stop():
     logging.info('Stopping workers')
     for w in _WORKERS:
-        w.stop()
+        w.stop = True
     _WORKERS[:] = []
+
+
+def stats():
+    logging.info('Getting workers stats')
+    res = {}
+    for w in _WORKERS:
+        logging.debug('%s handled %d jobs.' % (w.name, w.handled))
+        res[w.name] = w.handled
+    return res
