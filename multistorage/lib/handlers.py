@@ -6,11 +6,10 @@ import threading
 
 from tornado import web
 
+from lib import workers
 from lib.resmanager import ResManager, InvalidId
 
 _ETAGS = []
-
-
 
 class BaseHandler(web.RequestHandler):
     """Base class that wraps responses, errors and add stats headers"""
@@ -72,23 +71,22 @@ class CollectionHandler(BaseHandler):
 
     @web.asynchronous
     def get(self, site, col):
-        def fn():
-            if self.get_status() == 304:
-                return
-            list_  = []
-            col_   = ResManager.get(site, col)
-            params = self._parse_params()
-            for entry in col_.find(**params) :
-                entry['_id'] = str(entry['_id'])
-                list_.append(entry)
-            ResManager.end()
-            self.write(list_)
-            self.finish()
+        if self.get_status() == 304:
+            return
+        workers.add(lambda: self._get(site, col))
 
-        # FIXME should have a list of workers instead of creating a thread per
-        # request
-        t1 = threading.Thread(target=fn)
-        t1.start()
+
+    def _get(self, site, col):
+        list_  = []
+        col_   = ResManager.get(site, col)
+        params = self._parse_params()
+        for entry in col_.find(**params) :
+            entry['_id'] = str(entry['_id'])
+            list_.append(entry)
+        ResManager.end()
+        self.write(list_)
+        self.finish()
+
 
 
     def _parse_params(self):
@@ -116,34 +114,29 @@ class CollectionHandler(BaseHandler):
 class ItemHandler(BaseHandler):
     """Handler for items (aka: rows, entries) actions"""
  
+    @web.asynchronous
     def head(self, site, col, oid):
         if self.get_status() == 304:
             return
+        workers.add(lambda: self._get(site, col,oid, {'fields': {}}))
+
+
+    @web.asynchronous
+    def get(self, site, col, oid):
+        if self.get_status() == 304:
+            return
+        workers.add(lambda: self._get(site, col, oid))
+
+
+    def _get(self, site, col, oid, extra_args={}):
         try:
-            i = ResManager.get(site, col).find_one(ResManager.oid(oid), fields={})
+            i = ResManager.get(site, col).find_one(ResManager.oid(oid),
+                    **extra_args)
             ResManager.end()
             if i is None:
                 raise web.HTTPError(404)
+            i['_id'] = str(i['_id'])
+            self.write(i)
+            self.finish()
         except InvalidId as e:
             raise web.HTTPError(400, str(e))
-
-    @web.asynchronous
-    def get(self, site, col, oid, fields=None):
-        def fn():
-            if self.get_status() == 304:
-                return
-            try:
-                i = ResManager.get(site, col).find_one(ResManager.oid(oid))
-                ResManager.end()
-                if i is None:
-                    raise web.HTTPError(404)
-                i['_id'] = str(i['_id'])
-                self.write(i)
-                self.finish()
-            except InvalidId as e:
-                raise web.HTTPError(400, str(e))
-
-        # FIXME should have a list of workers instead of creating a thread per
-        # request
-        t1 = threading.Thread(target=fn)
-        t1.start()
