@@ -4,6 +4,7 @@ import hashlib
 import logging
 import threading
 import datetime
+import functools
 
 from tornado import web
 
@@ -12,6 +13,21 @@ from lib import workers
 from lib.resmanager import ResManager, InvalidId
 
 _ETAGS = []
+
+
+def exception_handler(fn):
+    """Handle exceptions raised in threads
+    
+    Must be used as decorator of all async callbacks."""
+    @functools.wraps(fn)
+    def _handler(handler, *args, **kwargs):
+        try:
+            fn(handler, *args, **kwargs)
+        except Exception, e:
+            handler._handle_request_exception(e)
+    return _handler
+
+
 
 class BaseHandler(web.RequestHandler):
     """Base class that wraps responses, errors and add stats headers"""
@@ -45,7 +61,7 @@ class BaseHandler(web.RequestHandler):
 
         super(BaseHandler, self).finish(*args, **kwargs)
 
-        if 'Etag' in self._headers:
+        if 'Etag' in self._headers and self.request.method in ['HEAD', 'GET']:
             etag = self._headers['Etag'][1:-1]
             logging.debug('Store Etag: %s' % (etag,))
             if etag not in _ETAGS:
@@ -81,6 +97,7 @@ class CollectionHandler(BaseHandler):
         workers.add(lambda: self._get(site, col))
 
 
+    @exception_handler
     def _get(self, site, col):
         list_  = []
         col_   = ResManager.get(site, col)
@@ -137,6 +154,7 @@ class ItemHandler(BaseHandler):
         workers.add(lambda: self._get(site, col, oid))
 
 
+    @exception_handler
     def _get(self, site, col, oid, extra_args={}):
         try:
             i = ResManager.get(site, col).find_one(ResManager.oid(oid),
@@ -152,7 +170,6 @@ class ItemHandler(BaseHandler):
 
 
 
-
 class StatsHandler(BaseHandler):
     """Handler for stats actions."""
  
@@ -165,7 +182,7 @@ class StatsHandler(BaseHandler):
             return
         workers.add(lambda: self._get())
 
-
+    
     def _get(self):
         uptime = datetime.timedelta(seconds=time.time() - lib.START_TIME)
         doc = {}
