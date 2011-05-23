@@ -110,6 +110,37 @@ class CollectionHandler(BaseHandler):
         self.finish()
 
 
+    @web.asynchronous
+    def post(self, site, col):
+        CollectionHandler.HANDLED += 1
+        if self.request.body is None:
+            raise web.HTTPError(400, 'Missing new data as JSON dict')
+        workers.add(lambda: self._post(site, col))
+
+
+    @exception_handler
+    def _post(self, site, col):
+        data = json.loads(self.request.body)
+        if '_id' in data:
+            del(data['_id'])
+        oid = ResManager.get(site, col).save(data)
+        ResManager.end()
+        self.write(str(oid))
+        self.finish()
+
+    
+    @web.asynchronous
+    def delete(self, site, col):
+        CollectionHandler.HANDLED += 1
+        workers.add(lambda: self._delete(site, col))
+
+
+    @exception_handler
+    def _delete(self, site, col): 
+        ResManager.get(site, col).drop()
+        ResManager.end()
+        self.finish()
+
 
     def _parse_params(self):
         params = {}
@@ -167,6 +198,52 @@ class ItemHandler(BaseHandler):
             self.finish()
         except InvalidId as e:
             raise web.HTTPError(400, str(e))
+    
+    
+    @web.asynchronous
+    def delete(self, site, col, oid):
+        ItemHandler.HANDLED += 1
+        workers.add(lambda: self._delete(site, col, oid))
+
+
+    @exception_handler
+    def _delete(self, site, col, oid):
+        try:
+            i = ResManager.get(site, col).find_one(ResManager.oid(oid))
+            if i is None:
+                ResManager.end()
+                raise web.HTTPError(404)
+            ResManager.get(site, col).remove(ResManager.oid(oid))
+            ResManager.end()
+            self.finish()
+        except InvalidId as e:
+            raise web.HTTPError(400, str(e))
+    
+    
+    @web.asynchronous
+    def put(self, site, col, oid):
+        ItemHandler.HANDLED += 1
+        workers.add(lambda: self._put(site, col, oid))
+
+
+    @exception_handler
+    def _put(self, site, col, oid):
+        try:
+            i = ResManager.get(site, col).find_one(ResManager.oid(oid))
+            if i is None:
+                ResManager.end()
+                raise web.HTTPError(404)
+
+            data = json.loads(self.request.body)
+            if '_id' in data:
+                del(data['_id'])
+            data['_id'] = ResManager.oid(oid)
+            oid = ResManager.get(site, col).save(data)
+            ResManager.end()
+            self.finish()
+        except InvalidId as e:
+            raise web.HTTPError(400, str(e))
+
 
 
 
