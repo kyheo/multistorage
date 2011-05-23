@@ -23,8 +23,10 @@ def exception_handler(fn):
     def _handler(handler, *args, **kwargs):
         try:
             fn(handler, *args, **kwargs)
-        except Exception, e:
+        except web.HTTPError, e:
             handler._handle_request_exception(e)
+        except Exception, e:
+            handler._handle_request_exception(web.HTTPError(500, str(e)))
     return _handler
 
 
